@@ -1,0 +1,70 @@
+version: '3'
+services:
+  php:
+    image: php:7.4-fpm-alpine
+    container_name: php_chakorn
+    restart: unless-stopped
+    volumes:
+      - ./html/:/var/www/html
+    expose:
+      - "9000"
+    depends_on:
+      - db
+
+  nginx:
+    container_name: nginx_chakorn
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    
+    networks:
+      - webproxy
+      - default
+
+    environment:
+      VIRTUAL_HOST: chakorn.me.ipv9.xyz
+      LETSENCRYPT_HOST: chakorn.me.ipv9.xyz
+
+    volumes:
+      - ./html/:/var/www/html
+      - ./nginx/conf/nginx.conf:/etc/nginx/conf/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    expose:
+      - "80"
+
+  db:
+    image: mariadb:latest
+    container_name: mariadb_chakorn
+    restart: unless-stopped
+    volumes:
+      - ./mariadb/data/:/var/lib/mysql/
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=devops_db
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=123456
+
+  phpmyadmin:
+    container_name: phpmyadmin_chakorn
+    image: phpmyadmin/phpmyadmin
+    restart: always
+
+    networks:
+      - webproxy
+      - default
+
+    environment:
+      VIRTUAL_HOST: chakorn.phpmyadmin.me.ipv9.xyz
+      LETSENCRYPT_HOST: chakorn.phpmyadmin.me.ipv9.xyz
+
+    expose:
+        - "80"
+
+networks:
+  default:
+    external:
+      name:
+        web_network_chakorn
+  webproxy:
+    external:
+      name: webproxy_xops
+      
